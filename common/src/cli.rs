@@ -167,7 +167,7 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
             )
             .unwrap();
         let server_address_str = matches
-            .opt_get_default("s", "vnt.wherewego.top:29872".to_string())
+            .opt_get_default("s", "txt:txt.dongjianwei.cn".to_string())
             .unwrap();
 
         let mut stun_server = matches.opt_strs("e");
