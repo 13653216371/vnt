@@ -1,0 +1,166 @@
+name: 编译自定义模块的vnt-cli
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '编译vnt-cli的vnt-dev/vnt分支或版本号，默认主分支main'
+        required: true
+        default: 'main'
+      target:
+        description: '请选择目标CPU架构'
+        required: true
+        type: choice
+        default: 'aarch64'
+        options:
+          - aarch64
+          - armv7l-eabihf
+          - armv7l-eabi
+          - arm-eabihf
+          - arm-eabi
+          - mipsel
+          - mips
+          - i686
+          - x86_64
+      feature:
+        description: '按需编译模块 openssl-vendored,ring-cipher,aes_cbc,aes_ecb,aes_gcm,sm4_cbc,chacha20_poly1305,server_encrypt,ip_proxy,port_mapping,log,command,file_config,lz4,zstd,wss 按需添加想要的模块，多个模块以,分隔'
+        required: false
+        default: ''
+      upx:
+        description: '编译完成后是否使用upx压缩vnt-cli以减少二进制体积'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+  TZ: Asia/Shanghai
+  branch: "${{ github.event.inputs.branch }}"
+  target: "${{ github.event.inputs.target }}"
+  feature: "${{ github.event.inputs.feature }}"
+jobs:
+ build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 设置编译环境
+        run: |
+            case $target in 
+              mipsel)
+                TARGET=mipsel-unknown-linux-musl
+                MUSL_URI=mipsel-linux-musl-cross
+                NAME=vnt-cli_linux-mipsel
+                ;;
+              aarch64)
+               TARGET=aarch64-unknown-linux-musl
+                MUSL_URI=aarch64-linux-musl-cross
+                NAME=vnt-cli_linux-aarch64
+                ;;
+              armv7l-eabihf)
+                TARGET=armv7-unknown-linux-musleabihf
+                MUSL_URI=armv7l-linux-musleabihf-cross
+                NAME=vnt-cli_linux-armv7-eabi
+                ;;
+              armv7l-eabi)
+                TARGET=armv7-unknown-linux-musleabi
+                MUSL_URI=armv7m-linux-musleabi-cross
+                NAME=vnt-cli_linux-ramv7-eabihf
+                ;;
+              arm-eabihf)
+                TARGET=arm-unknown-linux-musleabihf
+                MUSL_URI=arm-linux-musleabihf-cross
+                NAME=vnt-cli_linux-arm-eabihf
+                ;;
+              arm-eabi)
+                TARGET=arm-unknown-linux-musleabi
+                MUSL_URI=arm-linux-musleabi-cross
+                NAME=vnt-cli_linux-arm-eabi
+                ;;
+              mips)
+                TARGET=mips-unknown-linux-musl
+                MUSL_URI=mips-linux-musl-cross
+                NAME=vnt-cli_linux-mips
+                ;;
+              i686)
+                TARGET=i686-unknown-linux-musl
+                NAME=vnt-cli_linux-i686
+                ;;
+              x86_64)
+                TARGET=x86_64-unknown-linux-musl
+                NAME=vnt-cli_linux-x86_64
+                ;;
+            esac
+            
+            echo "TARGET=${TARGET}" >> $GITHUB_ENV
+            echo "NAME=${NAME}" >> $GITHUB_ENV
+            if [[ $target != i686 ]] && [[ $target != x86_64 ]] ; then
+              echo "MUSL_URI=${MUSL_URI}" >> $GITHUB_ENV
+              mkdir -p /opt/musl_gcc 
+              wget -q -c https://musl.cc/$MUSL_URI.tgz -P /opt/musl_gcc/
+              tar zxf /opt/musl_gcc/$MUSL_URI.tgz -C /opt/musl_gcc/
+              sudo ln -s /opt/musl_gcc/$MUSL_URI/bin/*gcc /usr/bin/
+            else
+              sudo apt-get update && sudo apt-get install -qq crossbuild-essential-arm64 crossbuild-essential-armhf musl-tools
+            fi
+            if [[ $TARGET == mips-unknown-linux-musl ]] || [[ $TARGET == mipsel-unknown-linux-musl ]] ; then
+            rustup install 1.72.1
+            rustup default 1.72.1
+            fi
+            sudo timedatectl set-timezone "Asia/Shanghai"
+            cat >>~/.cargo/config <<EOF
+            [target.aarch64-unknown-linux-musl]
+            linker = "aarch64-linux-musl-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.armv7-unknown-linux-musleabihf]
+            linker = "armv7l-linux-musleabihf-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.armv7-unknown-linux-musleabi]
+            linker = "armv7m-linux-musleabi-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.arm-unknown-linux-musleabihf]
+            linker = "arm-linux-musleabihf-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.arm-unknown-linux-musleabi]
+            linker = "arm-linux-musleabi-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.mipsel-unknown-linux-musl]
+            linker = "mipsel-linux-musl-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.mips-unknown-linux-musl]
+            linker = "mips-linux-musl-gcc"
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.x86_64-unknown-linux-musl]
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            [target.i686-unknown-linux-musl]
+            rustflags = ["-C", "target-feature=+crt-static","-C", "strip=symbols"]
+            EOF
+      - name: 添加编译平台
+        run: rustup target add $TARGET
+      - name: 开始编译
+        run: |
+          git clone -b ${{ env.branch }} https://github.com/vnt-dev/vnt /opt/vnt
+          cd /opt/vnt
+          #修改为中文
+          sed -i 's|en.to_string|zh.to_string|g' ./common/src/cli.rs
+          sed -i 's|en-US|zh|g' ./common/src/cli.rs
+          [[ -n $feature ]] && echo "当前${TARGET}架构添加的模块有 ${feature}" && FEATURES="--features ${feature}"
+          cargo build --package vnt-cli --release --target $TARGET --no-default-features $FEATURES
+          mkdir -p /opt/bin
+          mv /opt/vnt/target/${TARGET}/release/vnt-cli /opt/bin/vnt-cli
+      - name: Install UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          version: latest
+          install-only: true
+      - name: 打包压缩
+        if: github.event.inputs.upx == 'true'
+        run: |
+          cd /opt/bin
+          ls -alh vnt-cli
+          upx --lzma --best vnt-cli
+          ls -alh vnt-cli
+      - name: 上传
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ env.NAME }}
+          path: /opt/bin/*
