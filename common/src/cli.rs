@@ -150,7 +150,7 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
             Ok(value) => value.unwrap_or("123".to_string()),
             Err(_) => "123".to_string(),
         };
-        let device_id = matches.opt_get_default("d", String::new()).unwrap();
+        let mut device_id = matches.opt_get_default("d", String::new()).unwrap();
         if device_id.is_empty() {
             device_id = generated_serial_number::SERIAL_NUMBER.to_string();
         }
