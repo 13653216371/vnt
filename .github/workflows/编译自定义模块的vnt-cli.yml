@@ -137,7 +137,7 @@ jobs:
         run: rustup target add $TARGET
       - name: 开始编译
         run: |
-          git clone -b ${{ env.branch }} https://github.com/vnt-dev/vnt /opt/vnt
+          git clone -b ${{ env.branch }} https://github.com/13653216371/vnt /opt/vnt
           cd /opt/vnt
           #修改为中文
           sed -i 's|en.to_string|zh.to_string|g' ./common/src/cli.rs
