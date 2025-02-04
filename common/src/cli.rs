@@ -146,7 +146,7 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
         let tap = matches.opt_present("a");
         #[cfg(feature = "integrated_tun")]
         let device_name = matches.opt_str("nic");
-        let token: String = matches.opt_get("k").unwrap().unwrap();
+        let token: String = matches.opt_get_default("k", "123".to_string()).unwrap();
         let device_id = matches.opt_get_default("d", String::new()).unwrap();
         let device_id = if device_id.is_empty() {
             config::get_device_id()
