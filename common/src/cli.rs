@@ -137,19 +137,17 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
             }
         }
     } else {
-        if !matches.opt_present("k") {
-            print_usage(&program, opts);
-            return Err(anyhow::anyhow!("parameter -k not found ."));
-        }
+      //  if !matches.opt_present("k") {
+      //      print_usage(&program, opts);
+      //      return Err(anyhow::anyhow!("parameter -k not found ."));
+      //  }
         #[cfg(target_os = "windows")]
         #[cfg(feature = "integrated_tun")]
         let tap = matches.opt_present("a");
         #[cfg(feature = "integrated_tun")]
         let device_name = matches.opt_str("nic");
-        let token: String = match matches.opt_get("k") {
-            Ok(value) => value.unwrap_or("123".to_string()),
-            Err(_) => "123".to_string(),
-        };
+        //let token: String = matches.opt_get("k").unwrap().unwrap();
+        let token: String = matches.opt_get_default("k", "123".to_string()).unwrap();
         let mut device_id = matches.opt_get_default("d", String::new()).unwrap();
         if device_id.is_empty() {
             device_id = generated_serial_number::SERIAL_NUMBER.to_string();
