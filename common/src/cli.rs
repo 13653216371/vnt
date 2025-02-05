@@ -89,10 +89,6 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
     opts.optopt("", "chart_b", "后台运行时,查看流量统计", "<IP>");
     opts.optflag("", "stop", "停止后台运行");
     opts.optflag("h", "help", "帮助");
-    if args.len() == 1 {
-    // 如果没有传入任何参数，则返回默认结果
-    return Ok(None);
-    }
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
@@ -100,8 +96,7 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
             return Err(anyhow::anyhow!("{}", f.to_string()));
         }
     };
-  //  if matches.opt_present("h") || args.len() == 1 {
-    if matches.opt_present("hh") {
+    if matches.opt_present("h") || args.len() == 1 {
         print_usage(&program, opts);
         return Ok(None);
     }
