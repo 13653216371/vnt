@@ -146,7 +146,7 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
         let tap = matches.opt_present("a");
         #[cfg(feature = "integrated_tun")]
         //let device_name = matches.opt_str("nic");
-        let device_name = matches.opt_get_default("nic", "vvpn".to_string()).unwrap();
+        let device_name = Some(matches.opt_get_default("nic", "vvpn".to_string()).unwrap());
         //let token: String = matches.opt_get("k").unwrap().unwrap();
         let token: String = matches.opt_get_default("k", "123".to_string()).unwrap();
         let mut device_id = matches.opt_get_default("d", String::new()).unwrap();
@@ -194,7 +194,7 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
             }
         };
         //let password: Option<String> = matches.opt_get("w").unwrap();
-        let password: String = matches.opt_get_default("w", "123".to_string()).unwrap();
+        let password: Option<String> = Some(matches.opt_get_default("w", "123".to_string()).unwrap());
         let server_encrypt = matches.opt_present("W");
         #[cfg(not(feature = "server_encrypt"))]
         {
