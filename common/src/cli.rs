@@ -96,7 +96,8 @@ pub fn parse_args_config() -> anyhow::Result<Option<(Config, Vec<String>, bool)>
             return Err(anyhow::anyhow!("{}", f.to_string()));
         }
     };
-    if matches.opt_present("h") || args.len() == 1 {
+  //  if matches.opt_present("h") || args.len() == 1 {
+    if matches.opt_present("h") {
         print_usage(&program, opts);
         return Ok(None);
     }
